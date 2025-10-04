@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: sms-spam-detection
+    env: node
+    plan: free
+    buildCommand: |
+      # Install Python dependencies
+      pip install -r requirements.txt
+      # Download NLTK data
+      python -c "import nltk; nltk.download('stopwords'); nltk.download('punkt')"
+      # Install Node dependencies
+      npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        fromService:
+          type: web
+          name: sms-spam-detection
+          property: port
