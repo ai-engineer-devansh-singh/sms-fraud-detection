@@ -8,6 +8,10 @@ services:
       pip install -r requirements.txt
       # Download NLTK data during build (suppress output)
       python -c "import nltk; import sys; import io; old_stdout = sys.stdout; old_stderr = sys.stderr; sys.stdout = io.StringIO(); sys.stderr = io.StringIO(); nltk.download('stopwords', quiet=True); nltk.download('punkt', quiet=True); sys.stdout = old_stdout; sys.stderr = old_stderr; print('NLTK data downloaded')"
+      # Debug: Check file structure
+      echo "=== DEBUG: File structure ==="
+      python scripts/debug_paths.py
+      echo "=== END DEBUG ==="
       # Install Node dependencies
       npm install
     startCommand: npm start

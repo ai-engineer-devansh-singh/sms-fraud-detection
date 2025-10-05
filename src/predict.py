@@ -76,13 +76,47 @@ def main():
         
         text = sys.argv[1]
         
-        # Get the directory of this script
+        # Get the directory of this script and find models
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        model_dir = os.path.join(script_dir, 'models')
+        
+        # Try different possible locations for models directory
+        possible_model_dirs = [
+            os.path.join(script_dir, 'models'),  # Same directory as script
+            os.path.join(os.path.dirname(script_dir), 'src', 'models'),  # ../src/models
+            os.path.join(os.path.dirname(script_dir), 'models'),  # ../models
+        ]
+        
+        model_dir = None
+        for possible_dir in possible_model_dirs:
+            if os.path.exists(possible_dir):
+                model_dir = possible_dir
+                break
+        
+        if model_dir is None:
+            # List available directories for debugging
+            available_dirs = []
+            for check_dir in [script_dir, os.path.dirname(script_dir)]:
+                try:
+                    contents = os.listdir(check_dir)
+                    available_dirs.append(f"{check_dir}: {contents}")
+                except Exception:
+                    pass
+            
+            raise FileNotFoundError(f"Model directory not found. Tried: {possible_model_dirs}. Available: {available_dirs}")
+        
+        # Check if model directory exists
+        if not os.path.exists(model_dir):
+            raise FileNotFoundError(f"Model directory not found: {model_dir}")
         
         # Load the trained models
         model_path = os.path.join(model_dir, 'model.pkl')
         vectorizer_path = os.path.join(model_dir, 'vectorizer.pkl')
+        
+        # Check if model files exist
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Model file not found: {model_path}")
+        if not os.path.exists(vectorizer_path):
+            raise FileNotFoundError(f"Vectorizer file not found: {vectorizer_path}")
         
         with open(model_path, 'rb') as f:
             model = pickle.load(f)
@@ -120,10 +154,14 @@ def main():
         print(json.dumps(result))
         
     except Exception as e:
+        import traceback
         error_result = {
             "error": True,
             "message": str(e),
-            "original_text": text if 'text' in locals() else ""
+            "traceback": traceback.format_exc(),
+            "original_text": text if 'text' in locals() else "",
+            "script_dir": script_dir if 'script_dir' in locals() else "",
+            "model_dir": model_dir if 'model_dir' in locals() else ""
         }
         print(json.dumps(error_result))
         sys.exit(1)
