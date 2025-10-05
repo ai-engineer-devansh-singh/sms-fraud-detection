@@ -32,31 +32,33 @@ def ensure_nltk_data():
     old_stdout = sys.stdout
     old_stderr = sys.stderr
     
-    try:
-        # Try to access stopwords
-        stopwords.words('english')
-    except LookupError:
-        try:
-            # Suppress download output
-            sys.stdout = io.StringIO()
-            sys.stderr = io.StringIO()
-            nltk.download('stopwords', quiet=True)
-        finally:
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
+    # List of required NLTK resources
+    required_resources = [
+        ('stopwords', lambda: stopwords.words('english')),
+        ('punkt', lambda: nltk.word_tokenize("test")),
+        ('punkt_tab', lambda: nltk.word_tokenize("test"))  # Required for newer NLTK versions
+    ]
     
-    try:
-        # Try to access punkt tokenizer
-        nltk.word_tokenize("test")
-    except LookupError:
+    for resource_name, test_func in required_resources:
         try:
-            # Suppress download output
-            sys.stdout = io.StringIO()
-            sys.stderr = io.StringIO()
-            nltk.download('punkt', quiet=True)
-        finally:
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
+            # Try to access the resource
+            test_func()
+        except LookupError:
+            try:
+                print(f"📦 Downloading NLTK resource: {resource_name}")
+                # Suppress download output for production
+                if os.environ.get('NODE_ENV') == 'production':
+                    sys.stdout = io.StringIO()
+                    sys.stderr = io.StringIO()
+                
+                nltk.download(resource_name, quiet=True)
+                print(f"✅ Successfully downloaded: {resource_name}")
+            except Exception as e:
+                print(f"⚠️  Warning: Could not download {resource_name}: {e}")
+            finally:
+                if os.environ.get('NODE_ENV') == 'production':
+                    sys.stdout = old_stdout
+                    sys.stderr = old_stderr
 
 def load_models():
     """Load the ML models at startup"""
