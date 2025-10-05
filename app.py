@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 import sys
 import pickle
 import json
@@ -15,6 +16,7 @@ if os.environ.get('NODE_ENV') == 'production':
     warnings.filterwarnings('ignore', message='.*InconsistentVersionWarning.*')
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Global variables for the ML models
 model = None
@@ -145,18 +147,22 @@ def index():
     return render_template('index.html')
 
 @app.route('/predict', methods=['POST'])
+@app.route('/api/predict', methods=['POST'])  # Add API route for compatibility
 def predict():
     """Handle prediction requests"""
     try:
         data = request.get_json()
         
-        if not data or 'text' not in data:
+        # Accept both 'text' and 'message' for compatibility
+        text_content = data.get('text') or data.get('message') if data else None
+        
+        if not data or not text_content:
             return jsonify({
                 'error': True,
-                'message': 'No text provided'
+                'message': 'No text or message provided'
             }), 400
         
-        text = data['text'].strip()
+        text = text_content.strip()
         if not text:
             return jsonify({
                 'error': True,
@@ -173,6 +179,7 @@ def predict():
         }), 500
 
 @app.route('/health')
+@app.route('/api/health')  # Add API route for compatibility
 def health():
     """Health check endpoint"""
     return jsonify({
@@ -180,6 +187,47 @@ def health():
         'message': 'SMS Spam Detection API is running',
         'models_loaded': model is not None and vectorizer is not None
     })
+
+@app.route('/api/info')
+def api_info():
+    """API information endpoint"""
+    return jsonify({
+        'service': 'SMS Spam Detection',
+        'version': '1.0.0',
+        'endpoints': {
+            'predict': '/predict or /api/predict (POST)',
+            'health': '/health or /api/health (GET)',
+            'info': '/api/info (GET)'
+        },
+        'model_info': {
+            'algorithm': 'Multinomial Naive Bayes',
+            'vectorizer': 'TF-IDF',
+            'features': 3000
+        }
+    })
+
+@app.errorhandler(404)
+def not_found(error):
+    """Handle 404 errors with helpful information"""
+    return jsonify({
+        'error': True,
+        'message': 'Endpoint not found',
+        'available_endpoints': {
+            'web_interface': '/',
+            'predict': '/predict or /api/predict (POST)',
+            'health': '/health or /api/health (GET)',
+            'info': '/api/info (GET)'
+        }
+    }), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle 500 errors"""
+    return jsonify({
+        'error': True,
+        'message': 'Internal server error',
+        'details': str(error)
+    }), 500
 
 if __name__ == '__main__':
     try:
