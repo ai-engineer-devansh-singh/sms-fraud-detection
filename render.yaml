@@ -1,7 +1,7 @@
 services:
   - type: web
-    name: sms-spam-detection
-    env: node
+    name: sms-spam-detection-python
+    env: python
     plan: free
     buildCommand: |
       # Install Python dependencies
@@ -12,14 +12,12 @@ services:
       echo "=== DEBUG: File structure ==="
       python scripts/debug_paths.py
       echo "=== END DEBUG ==="
-      # Install Node dependencies
-      npm install
-    startCommand: npm start
+    startCommand: python app.py
     envVars:
-      - key: NODE_ENV
+      - key: FLASK_ENV
         value: production
       - key: PORT
         fromService:
           type: web
-          name: sms-spam-detection
+          name: sms-spam-detection-python
           property: port

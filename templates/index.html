@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS Spam Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 1.1rem;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.3s ease;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-predict {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-predict:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-clear {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #e1e1e1;
+        }
+        
+        .btn-clear:hover {
+            background: #e9ecef;
+        }
+        
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #f8f9fa;
+            border-left: 5px solid #28a745;
+        }
+        
+        .result.error {
+            background: #fff5f5;
+            border-left: 5px solid #dc3545;
+        }
+        
+        .result-header {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .result.success .result-header {
+            color: #28a745;
+        }
+        
+        .result.error .result-header {
+            color: #dc3545;
+        }
+        
+        .result-details {
+            margin-top: 15px;
+        }
+        
+        .result-item {
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+        
+        .result-item strong {
+            color: #333;
+        }
+        
+        .confidence-bar {
+            margin-top: 15px;
+        }
+        
+        .confidence-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .confidence-label {
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+        
+        .confidence-value {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .confidence-progress {
+            width: 100%;
+            height: 8px;
+            background: #e1e1e1;
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .confidence-fill.ham {
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .confidence-fill.spam {
+            background: linear-gradient(90deg, #dc3545 0%, #fd7e14 100%);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-size: 1.1rem;
+            margin-top: 15px;
+        }
+        
+        .loading::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+        
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+        
+        .examples {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e1e1e1;
+        }
+        
+        .examples h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .example-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .example-btn {
+            padding: 8px 16px;
+            background: #f8f9fa;
+            border: 1px solid #e1e1e1;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .example-btn:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+                margin: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .example-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ SMS Spam Detection</h1>
+            <p>Enter your message below to check if it's spam or legitimate (ham)</p>
+        </div>
+        
+        <form id="predictionForm">
+            <div class="form-group">
+                <label for="messageText">Message Text:</label>
+                <textarea 
+                    id="messageText" 
+                    placeholder="Enter your SMS message here..."
+                    required
+                ></textarea>
+            </div>
+            
+            <div class="btn-group">
+                <button type="submit" class="btn-predict">🔍 Check Message</button>
+                <button type="button" class="btn-clear" onclick="clearForm()">🗑️ Clear</button>
+            </div>
+        </form>
+        
+        <div class="loading" id="loading">
+            Analyzing message
+        </div>
+        
+        <div class="result" id="result">
+            <div class="result-header" id="resultHeader"></div>
+            <div class="result-details" id="resultDetails"></div>
+        </div>
+        
+        <div class="examples">
+            <h3>💡 Try these examples:</h3>
+            <div class="example-buttons">
+                <button class="example-btn" onclick="setExample('Hey, are we still meeting for lunch today?')">
+                    Normal Message
+                </button>
+                <button class="example-btn" onclick="setExample('URGENT! You have won $1000! Click here to claim your prize now!')">
+                    Spam Message
+                </button>
+                <button class="example-btn" onclick="setExample('Your order #12345 has been shipped and will arrive tomorrow')">
+                    Business Message
+                </button>
+                <button class="example-btn" onclick="setExample('FREE! Call now to win amazing prizes! Limited time offer!')">
+                    Promotional Message
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const messageText = document.getElementById('messageText').value.trim();
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const resultHeader = document.getElementById('resultHeader');
+            const resultDetails = document.getElementById('resultDetails');
+            
+            if (!messageText) {
+                showError('Please enter a message to analyze');
+                return;
+            }
+            
+            // Show loading
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: messageText })
+                });
+                
+                const data = await response.json();
+                
+                loading.style.display = 'none';
+                
+                if (data.error) {
+                    showError(data.message);
+                } else {
+                    showSuccess(data);
+                }
+                
+            } catch (error) {
+                loading.style.display = 'none';
+                showError('Failed to analyze message. Please try again.');
+                console.error('Error:', error);
+            }
+        });
+        
+        function showSuccess(data) {
+            const result = document.getElementById('result');
+            const resultHeader = document.getElementById('resultHeader');
+            const resultDetails = document.getElementById('resultDetails');
+            
+            result.className = 'result success';
+            result.style.display = 'block';
+            
+            const isSpam = data.is_spam;
+            const prediction = data.prediction.toUpperCase();
+            const icon = isSpam ? '🚨' : '✅';
+            
+            resultHeader.textContent = `${icon} Result: ${prediction}`;
+            
+            resultDetails.innerHTML = `
+                <div class="result-item">
+                    <strong>Original Message:</strong> ${escapeHtml(data.original_text)}
+                </div>
+                <div class="result-item">
+                    <strong>Processed Text:</strong> ${escapeHtml(data.transformed_text)}
+                </div>
+                <div class="confidence-bar">
+                    <div class="confidence-item">
+                        <span class="confidence-label">Ham (Legitimate)</span>
+                        <span class="confidence-value">${data.confidence_percentage.ham}</span>
+                    </div>
+                    <div class="confidence-progress">
+                        <div class="confidence-fill ham" style="width: ${data.confidence.ham * 100}%"></div>
+                    </div>
+                    
+                    <div class="confidence-item" style="margin-top: 10px;">
+                        <span class="confidence-label">Spam</span>
+                        <span class="confidence-value">${data.confidence_percentage.spam}</span>
+                    </div>
+                    <div class="confidence-progress">
+                        <div class="confidence-fill spam" style="width: ${data.confidence.spam * 100}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showError(message) {
+            const result = document.getElementById('result');
+            const resultHeader = document.getElementById('resultHeader');
+            const resultDetails = document.getElementById('resultDetails');
+            
+            result.className = 'result error';
+            result.style.display = 'block';
+            
+            resultHeader.textContent = '❌ Error';
+            resultDetails.innerHTML = `<div class="result-item">${escapeHtml(message)}</div>`;
+        }
+        
+        function clearForm() {
+            document.getElementById('messageText').value = '';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        function setExample(text) {
+            document.getElementById('messageText').value = text;
+            document.getElementById('result').style.display = 'none';
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

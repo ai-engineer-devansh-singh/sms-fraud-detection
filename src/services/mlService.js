@@ -114,12 +114,12 @@ class MLService {
                   );
                   return reject(new Error(prediction.message));
                 }
-                
+
                 // Log warnings but don't treat them as errors
                 if (error.trim()) {
                   console.warn("Python warnings (non-fatal):", error.trim());
                 }
-                
+
                 console.log(
                   "Prediction successful for text:",
                   text.substring(0, 50) + "..."
@@ -133,7 +133,7 @@ class MLService {
                 );
               }
             }
-            
+
             // Only treat as error if exit code is non-zero
             console.error("Python script error:", error);
             console.error("Python script exit code:", code);

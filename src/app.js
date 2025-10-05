@@ -37,24 +37,26 @@ app.get("/health", (req, res) => {
 async function warmupMLService() {
   return new Promise((resolve, reject) => {
     console.log("🔥 Warming up ML service...");
-    
+
     const isProduction = process.env.NODE_ENV === "production";
-    const pythonCmd = isProduction ? "python3" : "D:/ML projects/email spam/sms-detection/.venv/Scripts/python.exe";
+    const pythonCmd = isProduction
+      ? "python3"
+      : "D:/ML projects/email spam/sms-detection/.venv/Scripts/python.exe";
     const warmupScript = path.join(__dirname, "..", "scripts", "warmup.py");
-    
+
     const warmup = spawn(pythonCmd, [warmupScript]);
-    
+
     let output = "";
     let error = "";
-    
+
     warmup.stdout.on("data", (data) => {
       output += data.toString();
     });
-    
+
     warmup.stderr.on("data", (data) => {
       error += data.toString();
     });
-    
+
     warmup.on("close", (code) => {
       if (code === 0) {
         console.log("✅ ML service warmup completed successfully");
@@ -66,7 +68,7 @@ async function warmupMLService() {
         reject(new Error(`Warmup failed with code ${code}`));
       }
     });
-    
+
     warmup.on("error", (err) => {
       console.error("❌ Failed to start warmup process:", err);
       reject(err);
@@ -78,12 +80,15 @@ app.listen(PORT, async () => {
   console.log(`🚀 SMS Spam Detection Server is running on port ${PORT}`);
   console.log(`📊 API Health Check: http://localhost:${PORT}/health`);
   console.log(`🌐 Web Interface: http://localhost:${PORT}`);
-  
+
   // Run warmup in background
   try {
     await warmupMLService();
   } catch (error) {
-    console.warn("⚠️ Warmup failed, but server will continue running:", error.message);
+    console.warn(
+      "⚠️ Warmup failed, but server will continue running:",
+      error.message
+    );
   }
 });
 
