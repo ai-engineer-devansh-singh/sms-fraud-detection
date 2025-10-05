@@ -32,8 +32,9 @@ If Blueprint doesn't work, create a Web Service manually:
    - **Start Command**: `npm start`
 
 ### Step 4: Environment Variables (if needed)
-- `NODE_ENV`: `production`
+- `NODE_ENV`: `production` (automatically set by Render)
 - `PORT`: (automatically set by Render)
+- `PYTHON_PATH`: (optional - if you need to specify a custom Python path)
 
 ## 📁 Project Structure for Render
 ```
@@ -76,16 +77,78 @@ sms-detection/
 - Check build logs in Render dashboard
 - Ensure all dependencies are in `requirements.txt`
 - Verify `package.json` is valid
+- Make sure model files (`model.pkl`, `vectorizer.pkl`) are committed to git
 
 ### Python Import Errors?
-- NLTK data downloads during build
-- Check if model files are included in repo
+- NLTK data downloads during build automatically
+- Verify model files exist in `src/models/` directory
+- Check if Python dependencies are compatible
+
+### Production Deployment Checklist ✅
+
+Before deploying to Render, ensure:
+
+1. **All files are committed to git:**
+   ```bash
+   git add .
+   git commit -m "Prepare for deployment"
+   git push origin main
+   ```
+
+2. **Model files are included:**
+   - `src/models/model.pkl` ✅
+   - `src/models/vectorizer.pkl` ✅
+
+3. **Configuration files are correct:**
+   - `render.yaml` ✅
+   - `requirements.txt` ✅ 
+   - `package.json` ✅
+
+4. **Environment detection works:**
+   - App automatically detects production vs development
+   - Uses `python3` in production (Render provides this)
+   - Uses local virtual environment in development
+
+### Application Architecture
+
+```
+Production (Render):
+Node.js App → python3 → ML Models → JSON Response
+
+Development (Local):
+Node.js App → .venv/Scripts/python.exe → ML Models → JSON Response
+```
 
 ### Local Development
 ```bash
 npm install
 npm start
 ```
+
+### Windows: Missing Python or modules
+
+If you see errors like "Failed to start Python process" or "ModuleNotFoundError: No module named 'nltk'", set up Python and the required packages:
+
+PowerShell (recommended):
+
+```powershell
+# 1. Create and activate a virtual environment in the project root
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# 2. Install Python requirements
+pip install -r requirements.txt
+
+# 3. (Optional) If using the repo's venv, point Node to it
+#$env:PYTHON_PATH = (Resolve-Path .\.venv\Scripts\python.exe).Path
+
+# 4. Run Node test script
+node .\scripts\test_ml_service.js
+```
+
+If you prefer a system Python, make sure `python` or `py` is on your PATH and install the requirements globally (or in your chosen venv).
+
+Alternatively, set the `PYTHON_PATH` environment variable to a specific Python executable path before starting the Node app.
 
 ## 💡 Tips
 
