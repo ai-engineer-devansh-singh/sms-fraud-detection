@@ -13,16 +13,44 @@ if os.environ.get('NODE_ENV') == 'production':
     warnings.filterwarnings('ignore', category=UserWarning)
     warnings.filterwarnings('ignore', message='.*InconsistentVersionWarning.*')
 
-# Download required NLTK data
-try:
-    stopwords.words('english')
-except LookupError:
-    nltk.download('stopwords')
+# Download required NLTK data with better error handling
+def ensure_nltk_data():
+    """Ensure NLTK data is available, download if necessary"""
+    import io
+    import sys
+    
+    # Redirect stdout temporarily to capture download messages
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
+    
+    try:
+        # Try to access stopwords
+        stopwords.words('english')
+    except LookupError:
+        try:
+            # Suppress download output
+            sys.stdout = io.StringIO()
+            sys.stderr = io.StringIO()
+            nltk.download('stopwords', quiet=True)
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
+    
+    try:
+        # Try to access punkt tokenizer
+        nltk.word_tokenize("test")
+    except LookupError:
+        try:
+            # Suppress download output
+            sys.stdout = io.StringIO()
+            sys.stderr = io.StringIO()
+            nltk.download('punkt', quiet=True)
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
 
-try:
-    nltk.word_tokenize("test")
-except LookupError:
-    nltk.download('punkt')
+# Initialize NLTK data
+ensure_nltk_data()
 
 def transform_text(text):
     """
