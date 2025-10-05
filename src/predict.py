@@ -6,6 +6,12 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 import string
 import os
+import warnings
+
+# Suppress sklearn version warnings in production
+if os.environ.get('NODE_ENV') == 'production':
+    warnings.filterwarnings('ignore', category=UserWarning)
+    warnings.filterwarnings('ignore', message='.*InconsistentVersionWarning.*')
 
 # Download required NLTK data
 try:

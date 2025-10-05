@@ -5,10 +5,10 @@ class MLService {
   constructor() {
     this.pythonScript = path.join(__dirname, "..", "predict.py");
     this.pythonPath = process.env.PYTHON_PATH || null;
-    
+
     // For production (Render), python3 should be available in PATH
     this.productionCandidates = ["python3", "python"];
-    
+
     // For local development - prioritize virtual environment
     this.localCandidates = [
       "D:/ML projects/email spam/sms-detection/.venv/Scripts/python.exe",
@@ -28,15 +28,24 @@ class MLService {
 
       // Choose candidates based on environment
       const isProduction = process.env.NODE_ENV === "production";
-      const candidates = isProduction ? this.productionCandidates : this.localCandidates;
+      const candidates = isProduction
+        ? this.productionCandidates
+        : this.localCandidates;
 
-      console.log(`Environment: ${isProduction ? 'production' : 'development'}, trying Python candidates:`, candidates);
+      console.log(
+        `Environment: ${
+          isProduction ? "production" : "development"
+        }, trying Python candidates:`,
+        candidates
+      );
 
       const tryCandidate = (idx) => {
         if (idx >= candidates.length) {
           return reject(
             new Error(
-              `No suitable Python interpreter found. Tried: ${candidates.join(', ')}. Set PYTHON_PATH environment variable or install Python.`
+              `No suitable Python interpreter found. Tried: ${candidates.join(
+                ", "
+              )}. Set PYTHON_PATH environment variable or install Python.`
             )
           );
         }
@@ -63,10 +72,12 @@ class MLService {
 
         check.on("close", (code) => {
           const output = (out + err).trim();
-          console.log(`${candidate} version check - Code: ${code}, Output: ${output}`);
-          
+          console.log(
+            `${candidate} version check - Code: ${code}, Output: ${output}`
+          );
+
           // Accept if command printed Python version info or exited successfully
-          if (code === 0 || output.toLowerCase().includes('python')) {
+          if (code === 0 || output.toLowerCase().includes("python")) {
             console.log(`Selected Python interpreter: ${candidate}`);
             return resolve(candidate);
           }
@@ -97,10 +108,22 @@ class MLService {
               try {
                 const prediction = JSON.parse(result.trim());
                 if (prediction.error) {
-                  console.error("Python script returned error:", prediction.message);
+                  console.error(
+                    "Python script returned error:",
+                    prediction.message
+                  );
                   return reject(new Error(prediction.message));
                 }
-                console.log("Prediction successful for text:", text.substring(0, 50) + "...");
+                
+                // Log warnings but don't treat them as errors
+                if (error.trim()) {
+                  console.warn("Python warnings (non-fatal):", error.trim());
+                }
+                
+                console.log(
+                  "Prediction successful for text:",
+                  text.substring(0, 50) + "..."
+                );
                 return resolve(prediction);
               } catch (e) {
                 console.error("JSON Parse Error:", e);
@@ -110,6 +133,8 @@ class MLService {
                 );
               }
             }
+            
+            // Only treat as error if exit code is non-zero
             console.error("Python script error:", error);
             console.error("Python script exit code:", code);
             return reject(
