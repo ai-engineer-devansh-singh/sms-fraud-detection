@@ -1,4 +1,4 @@
-# SMS Spam Detection - Render Deployment Guide
+# SMS Spam Detection - Python Flask App - Render Deployment Guide
 
 ## 🚀 Deploy to Render
 
@@ -7,7 +7,7 @@
 2. Make sure all files are committed:
    - `render.yaml`
    - `requirements.txt`
-   - `package.json`
+   - `app.py`
    - All source files
 
 ### Step 2: Deploy on Render
@@ -23,32 +23,29 @@ If Blueprint doesn't work, create a Web Service manually:
 1. **New Web Service**
 2. **Connect Repository**
 3. **Settings**:
-   - **Name**: `sms-spam-detection`
-   - **Environment**: `Node`
+   - **Name**: `sms-spam-detection-python`
+   - **Environment**: `Python`
    - **Build Command**: 
      ```bash
-     pip install -r requirements.txt && python -c "import nltk; nltk.download('stopwords'); nltk.download('punkt')" && npm install
+     pip install -r requirements.txt && python -c "import nltk; nltk.download('stopwords'); nltk.download('punkt')"
      ```
-   - **Start Command**: `npm start`
+   - **Start Command**: `python app.py`
 
 ### Step 4: Environment Variables (if needed)
-- `NODE_ENV`: `production` (automatically set by Render)
+- `FLASK_ENV`: `production` (automatically set by Render)
 - `PORT`: (automatically set by Render)
-- `PYTHON_PATH`: (optional - if you need to specify a custom Python path)
 
 ## 📁 Project Structure for Render
 ```
 sms-detection/
-├── src/
-│   ├── app.js              # Main server
-│   ├── predict.py          # Python ML script
-│   ├── routes/
-│   ├── services/
-│   └── models/
-├── public/                 # Frontend files
-├── package.json            # Node.js dependencies
-├── requirements.txt        # Python dependencies
-├── render.yaml            # Render configuration
+├── app.py                  # Main Flask application
+├── models/
+│   ├── model.pkl          # Trained ML model
+│   └── vectorizer.pkl     # Text vectorizer
+├── templates/
+│   └── index.html         # Web interface
+├── requirements.txt       # Python dependencies
+├── render.yaml           # Render configuration
 └── README.md
 ```
 
@@ -56,19 +53,18 @@ sms-detection/
 
 ### `render.yaml`
 - Configures build and start commands
-- Sets up Python + Node.js environment
+- Sets up Python environment
 
 ### `requirements.txt`
-- Lists Python dependencies for ML model
+- Lists Python dependencies for Flask and ML model
 
-### Updated `mlService.js`
-- Uses `python3` in production
-- Maintains local development compatibility
+### `app.py`
+- Main Flask application with ML prediction logic
 
 ## 🌐 After Deployment
 
 1. **Your app will be available at**: `https://your-app-name.onrender.com`
-2. **API endpoint**: `https://your-app-name.onrender.com/api/predict`
+2. **API endpoint**: `https://your-app-name.onrender.com/predict`
 3. **Web interface**: `https://your-app-name.onrender.com`
 
 ## 🚨 Troubleshooting
@@ -76,12 +72,11 @@ sms-detection/
 ### Build Fails?
 - Check build logs in Render dashboard
 - Ensure all dependencies are in `requirements.txt`
-- Verify `package.json` is valid
 - Make sure model files (`model.pkl`, `vectorizer.pkl`) are committed to git
 
 ### Python Import Errors?
 - NLTK data downloads during build automatically
-- Verify model files exist in `src/models/` directory
+- Verify model files exist in `models/` directory
 - Check if Python dependencies are compatible
 
 ### Production Deployment Checklist ✅
@@ -96,38 +91,37 @@ Before deploying to Render, ensure:
    ```
 
 2. **Model files are included:**
-   - `src/models/model.pkl` ✅
-   - `src/models/vectorizer.pkl` ✅
+   - `models/model.pkl` ✅
+   - `models/vectorizer.pkl` ✅
 
 3. **Configuration files are correct:**
    - `render.yaml` ✅
    - `requirements.txt` ✅ 
-   - `package.json` ✅
+   - `app.py` ✅
 
 4. **Environment detection works:**
    - App automatically detects production vs development
-   - Uses `python3` in production (Render provides this)
-   - Uses local virtual environment in development
+   - Uses built-in Flask server
+   - NLTK data downloads during build
 
 ### Application Architecture
 
 ```
 Production (Render):
-Node.js App → python3 → ML Models → JSON Response
+Flask App → ML Models → JSON Response
 
 Development (Local):
-Node.js App → .venv/Scripts/python.exe → ML Models → JSON Response
+Flask App → ML Models → JSON Response
 ```
 
 ### Local Development
 ```bash
-npm install
-npm start
+python app.py
 ```
 
 ### Windows: Missing Python or modules
 
-If you see errors like "Failed to start Python process" or "ModuleNotFoundError: No module named 'nltk'", set up Python and the required packages:
+If you see errors like "ModuleNotFoundError: No module named 'nltk'", set up Python and the required packages:
 
 PowerShell (recommended):
 
@@ -139,16 +133,12 @@ python -m venv .venv
 # 2. Install Python requirements
 pip install -r requirements.txt
 
-# 3. (Optional) If using the repo's venv, point Node to it
-#$env:PYTHON_PATH = (Resolve-Path .\.venv\Scripts\python.exe).Path
+# 3. Generate models (if needed)
+python generate_models.py
 
-# 4. Run Node test script
-node .\scripts\test_ml_service.js
+# 4. Run the Flask app
+python app.py
 ```
-
-If you prefer a system Python, make sure `python` or `py` is on your PATH and install the requirements globally (or in your chosen venv).
-
-Alternatively, set the `PYTHON_PATH` environment variable to a specific Python executable path before starting the Node app.
 
 ## 💡 Tips
 

@@ -15,42 +15,40 @@ def main():
         "script_location": __file__,
         "script_directory": os.path.dirname(os.path.abspath(__file__)),
         "environment_variables": {
-            "NODE_ENV": os.environ.get("NODE_ENV", "not_set"),
+            "FLASK_ENV": os.environ.get("FLASK_ENV", "not_set"),
             "PATH": os.environ.get("PATH", "not_set")[:200] + "..." if os.environ.get("PATH") else "not_set"
         }
     }
     
-    # Check for predict.py and models
+    # Check for app.py and models
     script_dir = os.path.dirname(os.path.abspath(__file__))
     project_root = os.path.dirname(script_dir)
-    src_dir = os.path.join(project_root, "src")
+    models_dir = os.path.join(project_root, "models")
     
     debug_info["project_structure"] = {
         "script_dir": script_dir,
         "project_root": project_root,
-        "src_dir": src_dir,
-        "src_dir_exists": os.path.exists(src_dir)
+        "models_dir": models_dir,
+        "models_dir_exists": os.path.exists(models_dir)
     }
     
-    # Check for predict.py
-    predict_paths = [
-        os.path.join(src_dir, "predict.py"),
-        os.path.join(project_root, "predict.py"),
-        os.path.join(script_dir, "..", "predict.py")
+    # Check for app.py
+    app_paths = [
+        os.path.join(project_root, "app.py"),
+        os.path.join(script_dir, "..", "app.py")
     ]
     
-    debug_info["predict_py_search"] = {}
-    for i, p in enumerate(predict_paths):
-        debug_info["predict_py_search"][f"path_{i}"] = {
+    debug_info["app_py_search"] = {}
+    for i, p in enumerate(app_paths):
+        debug_info["app_py_search"][f"path_{i}"] = {
             "path": p,
             "exists": os.path.exists(p)
         }
     
     # Check for model files
     model_dirs = [
-        os.path.join(src_dir, "models"),
         os.path.join(project_root, "models"),
-        os.path.join(script_dir, "..", "src", "models")
+        os.path.join(script_dir, "..", "models")
     ]
     
     debug_info["model_dirs_search"] = {}

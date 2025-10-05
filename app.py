@@ -65,10 +65,9 @@ def load_models():
     
     # Try different possible locations for models directory
     possible_model_dirs = [
-        os.path.join(script_dir, 'models'),  # Same directory as script
-        os.path.join(os.path.dirname(script_dir), 'src', 'models'),  # ../src/models
+        os.path.join(script_dir, 'models'),  # ./models (new location)
+        os.path.join(script_dir, 'src', 'models'),  # ./src/models (old location)
         os.path.join(os.path.dirname(script_dir), 'models'),  # ../models
-        os.path.join(script_dir, 'src', 'models'),  # ./src/models
     ]
     
     model_dir = None
